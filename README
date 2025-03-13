@@ -1,0 +1,102 @@
+# NVR Recorder e Storage Monitor
+
+Uma aplicação robusta e flexível para gravação contínua de streams (RTSP ou dispositivos locais) e monitoramento de armazenamento. O sistema utiliza Node.js e FFmpeg para segmentar a gravação de vídeo, gerenciar automaticamente o espaço em disco e executar tarefas em paralelo usando o módulo `cluster`.
+
+## Funcionalidades
+
+- **Gravação de Streams:**  
+  Capta vídeos via URL RTSP ou dispositivos locais (por exemplo, `/dev/video0`), segmentando a gravação utilizando o FFmpeg.
+
+- **Buffer Circular com Segment Muxer:**  
+  Grava os vídeos em segmentos (`.ts`) e gera uma playlist (`playlist.m3u8`) para reprodução contínua, permitindo um buffer circular controlado.
+
+- **Gerenciamento de Armazenamento:**  
+  Monitora o uso do disco e realiza a limpeza automática dos arquivos mais antigos quando o limite de armazenamento configurado é atingido.
+
+- **Arquitetura Paralela:**  
+  Utiliza o módulo `cluster` para separar as tarefas de gravação e monitoramento em workers distintos (ou combinados, conforme os recursos disponíveis), aumentando a resiliência e escalabilidade.
+
+- **Logging e Monitoramento de Performance:**  
+  Integra o Winston para registro detalhado dos eventos e a coleta de métricas de performance, facilitando a depuração e o ajuste do sistema.
+
+- **Configuração via Linha de Comando:**  
+  Utiliza o Commander para possibilitar a configuração dinâmica da fonte de vídeo, diretório de gravação e limite de armazenamento.
+
+## Requisitos
+
+- **Node.js** (versão 14 ou superior recomendada)
+- **FFmpeg** instalado e disponível no PATH
+- **Sistema Linux** (para melhor compatibilidade com dispositivos locais, como `/dev/video0`)
+
+## Instalação
+
+Clone o repositório e instale as dependências:
+
+```bash
+git clone https://github.com/seu-usuario/nvr-recorder.git
+cd nvr-recorder
+npm install
+```
+
+### Instalação Global
+
+Para deixar o comando disponível no PATH, você pode instalar o pacote globalmente. Basta executar o comando dentro da pasta do projeto:
+
+```bash
+npm install -g .
+```
+
+Isso fará com que o comando `nvr` seja disponibilizado globalmente. Você poderá iniciar o projeto utilizando, por exemplo:
+
+```bash
+nvr -s '/dev/video0' -d '/var/recordings'
+```
+
+## Configuração e Uso
+
+A aplicação pode ser configurada e iniciada via linha de comando:
+
+```bash
+nvr --source rtsp://192.168.1.1:554 --directory ./records --limit 5
+```
+
+### Opções Disponíveis
+
+- `-s, --source <url>`: URL da fonte de vídeo (RTSP ou caminho para dispositivo, por exemplo, `/dev/video0`).
+- `-d, --directory <path>`: Diretório de armazenamento dos arquivos de gravação. Padrão: `./records`.
+- `-l, --limit <gb>`: Limite de armazenamento em gigabytes. Padrão: `5GB`.
+
+## Arquitetura do Projeto
+
+O projeto é dividido em módulos para facilitar a manutenção e escalabilidade:
+
+- **main.js:**  
+  Arquivo principal que gerencia os workers utilizando o módulo `cluster` e processa os argumentos de linha de comando.
+
+- **NVR.js:**  
+  Contém as classes principais:
+  - **NVRConfig:** Define as configurações e os valores padrão.
+  - **NVRRecorder:** Responsável pela gravação dos streams utilizando FFmpeg com segmentação.
+  - **StorageManager:** Gerencia o monitoramento e a limpeza do armazenamento.
+  - **PerformanceMonitor:** Registra métricas de desempenho e loga informações relevantes.
+
+- **worker-recording.js:**  
+  Inicializa o worker responsável pela gravação dos vídeos.
+
+- **worker-storage.js:**  
+  Inicializa o worker responsável pelo monitoramento do espaço de armazenamento.
+
+## Logs e Monitoramento
+
+O sistema utiliza o Winston para manter logs detalhados:
+
+- **storage-debug.log:** Logs das operações de monitoramento e limpeza de armazenamento.
+- **performance.log:** Registros das métricas de performance, permitindo a análise do desempenho do sistema.
+
+## Contribuição
+
+Contribuições são bem-vindas! Se você encontrar problemas ou tiver sugestões de melhorias, sinta-se à vontade para abrir uma issue ou enviar um pull request.
+
+## Licença
+
+Este projeto está licenciado sob a licença MIT. Consulte o arquivo [MIT](LICENSE) para mais detalhes.
